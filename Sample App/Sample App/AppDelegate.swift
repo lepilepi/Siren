@@ -76,4 +76,12 @@ extension AppDelegate: SirenDelegate
     func sirenDidDetectNewVersionWithoutAlert(message: String) {
         print("\(message)")
     }
+
+    /**
+        Returns a random alertType 
+    */
+    func sirenAlertTypeForVersion(currentVersion: String, newVersion: String) -> SirenAlertType{
+        let types = [SirenAlertType.Force, SirenAlertType.Option, SirenAlertType.Skip]
+        return types[Int(arc4random_uniform(UInt32(types.count)))]
+    }
 }

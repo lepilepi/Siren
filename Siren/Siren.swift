@@ -15,6 +15,7 @@ import UIKit
     optional func sirenUserDidSkipVersion()                             // User did click on button that skips version update
     optional func sirenUserDidCancel()                                  // User did click on button that cancels update dialog
     optional func sirenDidDetectNewVersionWithoutAlert(message: String) // Siren performed version check and did not display alert
+    optional func sirenAlertTypeForVersion(currentVersion: String, newVersion: String) -> SirenAlertType // Siren performed version check and asks for alerTtype
 }
 
 // MARK: Enumerations
@@ -28,7 +29,7 @@ import UIKit
         - None: Doesn't show the alert, but instead returns a localized message for use in a custom UI within the sirenDidDetectNewVersionWithoutAlert() delegate method
 
 */
-public enum SirenAlertType {
+@objc public enum SirenAlertType: Int {
     case Force        // Forces user to update your app (1 button alert)
     case Option       // (DEFAULT) Presents user with option to update app now or at next launch (2 button alert)
     case Skip         // Presents user with option to update the app now, at next launch, or to skip this version all together (3 button alert)
@@ -381,6 +382,12 @@ private extension Siren {
     
     func showAlert() {
         
+        var alertTypeForCurrentAlert = alertType
+        
+        if let newAlertType = delegate?.sirenAlertTypeForVersion?(currentInstalledVersion!, newVersion: currentAppStoreVersion!){
+            alertTypeForCurrentAlert = newAlertType
+        }
+        
         let updateAvailableMessage = NSBundle().localizedString("Update Available", forceLanguageLocalization: forceLanguageLocalization)
         let newVersionMessage = localizedNewVersionMessage()
 
@@ -390,7 +397,7 @@ private extension Siren {
             alertController.view.tintColor = alertControllerTintColor
         }
         
-        switch alertType {
+        switch alertTypeForCurrentAlert {
         case .Force:
             alertController.addAction(updateAlertAction())
         case .Option:
@@ -404,7 +411,7 @@ private extension Siren {
             delegate?.sirenDidDetectNewVersionWithoutAlert?(newVersionMessage)
         }
         
-        if alertType != .None {
+        if alertTypeForCurrentAlert != .None {
             alertController.show()
             delegate?.sirenDidShowUpdateDialog?()
         }
