@@ -381,13 +381,19 @@ private extension Siren {
     }
     
     func showAlert() {
-        
-        var alertTypeForCurrentAlert = alertType
-        
-        if let newAlertType = delegate?.sirenAlertTypeForVersion?(currentInstalledVersion!, newVersion: currentAppStoreVersion!){
-            alertTypeForCurrentAlert = newAlertType
+        if delegate?.sirenAlertTypeForVersion != nil{
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+                let newAlertType = self.delegate!.sirenAlertTypeForVersion!(self.currentInstalledVersion!, newVersion: self.currentAppStoreVersion!)
+                dispatch_async(dispatch_get_main_queue()) {
+                    self.showAlert(withType: newAlertType)
+                }
+            }
+        } else {
+            showAlert(withType: alertType)
         }
-        
+    }
+
+    func showAlert(withType alertType: SirenAlertType) {
         let updateAvailableMessage = NSBundle().localizedString("Update Available", forceLanguageLocalization: forceLanguageLocalization)
         let newVersionMessage = localizedNewVersionMessage()
 
@@ -397,7 +403,7 @@ private extension Siren {
             alertController.view.tintColor = alertControllerTintColor
         }
         
-        switch alertTypeForCurrentAlert {
+        switch alertType {
         case .Force:
             alertController.addAction(updateAlertAction())
         case .Option:
@@ -411,7 +417,7 @@ private extension Siren {
             delegate?.sirenDidDetectNewVersionWithoutAlert?(newVersionMessage)
         }
         
-        if alertTypeForCurrentAlert != .None {
+        if alertType != .None {
             alertController.show()
             delegate?.sirenDidShowUpdateDialog?()
         }
